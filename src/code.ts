@@ -5,8 +5,6 @@ if (figma.editorType === "dev" && figma.mode === "codegen") {
 
     const htmlCode = await generateCodeString(node);
 
-    console.warn(node);
-
     // @see https://www.figma.com/plugin-docs/api/CodeBlockNode/#codelanguage
     return [
       {
@@ -49,6 +47,8 @@ const svgExportNodeTypes: Partial<SceneNode["type"]>[] = [
 async function generateCodeString(node: SceneNode, depth = 0): Promise<string> {
   const { type } = node;
 
+  console.warn(node);
+
   if (!generateNodeTypes.includes(type)) {
     return "";
   }
@@ -83,7 +83,7 @@ async function generateCodeString(node: SceneNode, depth = 0): Promise<string> {
   if ("children" in node && node.children.length > 0) {
     for (let child of node.children) {
       const code = await generateCodeString(child, depth + 1);
-      childrenString = `\n${code}\n`;
+      childrenString += `\n${code}\n`;
     }
   } else {
     childrenString = content;
