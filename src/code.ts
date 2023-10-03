@@ -47,8 +47,6 @@ const svgExportNodeTypes: Partial<SceneNode["type"]>[] = [
 async function generateCodeString(node: SceneNode, depth = 0): Promise<string> {
   const { type } = node;
 
-  console.warn(node);
-
   if (!generateNodeTypes.includes(type)) {
     return "";
   }
@@ -75,6 +73,26 @@ async function generateCodeString(node: SceneNode, depth = 0): Promise<string> {
 
   // CSSPropertiesを取得する
   const cssJson = await node.getCSSAsync();
+  const hasFillImageObject = Object.entries(cssJson).find(
+    ([key, value]) => value.indexOf("<path-to-image>") !== -1,
+  );
+  // TODO: 画像の場合は置換が必要かも
+  const fillImages = await getFillImage(node);
+  if (
+    hasFillImageObject &&
+    fillImages &&
+    0 < fillImages?.length &&
+    fillImages[0].bytes
+  ) {
+    const imgSrc = figma.base64Encode(fillImages[0].bytes);
+
+    cssJson[hasFillImageObject[0]] = hasFillImageObject[1].replace(
+      `<path-to-image>`,
+      `'data:image/png;base64,${imgSrc}'`,
+    );
+    cssJson["background-size"] = "cover";
+  }
+
   const content = ("characters" in node && node.characters) || "";
   const styleString = cssJsonToStyleString(cssJson);
   let childrenString = "";
@@ -211,4 +229,44 @@ const generatePropsTypeFromComponentPropertyDefinitions = (
     }
   });
   return props;
+};
+
+const getFillImage = async (
+  node: SceneNode,
+): Promise<
+  | {
+      bytes: Uint8Array | undefined;
+      size:
+        | {
+            width: number;
+            height: number;
+          }
+        | undefined;
+    }[]
+  | null
+> => {
+  if (!("fills" in node) || !Array.isArray(node.fills)) {
+    return null;
+  }
+
+  const imageFills: ImagePaint[] = node.fills.filter(
+    (fill) => fill.type === "IMAGE",
+  );
+
+  if (imageFills.length < 1) {
+    return null;
+  }
+
+  const result = await Promise.all(
+    imageFills.map(async (fill) => {
+      const image = figma.getImageByHash(fill.imageHash || "");
+      const bytes = await image?.getBytesAsync();
+      const size = await image?.getSizeAsync();
+      return {
+        bytes,
+        size,
+      };
+    }),
+  );
+  return result;
 };
