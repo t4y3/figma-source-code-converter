@@ -1,2 +1,9 @@
-# tchad
-Code for the web is displayed in dev mode.
+# figma-source-code-converter
+
+```shell
+npm install
+```
+
+```shell
+npm run dev
+```

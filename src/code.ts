@@ -1,15 +1,17 @@
+import beautify from "beautify";
+
 // Make sure that we're in Dev Mode and running codegen
 if (figma.editorType === "dev" && figma.mode === "codegen") {
   figma.codegen.on("generate", async (event) => {
-    const { node, language } = event;
-
+    const { node } = event;
     const htmlCode = await generateCodeString(node);
+    const beautifyCode = beautify(htmlCode, { format: "html" });
 
     // @see https://www.figma.com/plugin-docs/api/CodeBlockNode/#codelanguage
     return [
       {
         language: "HTML",
-        code: formatHTML(htmlCode),
+        code: beautifyCode,
         title: "Formatted HTML",
       },
     ];
@@ -51,13 +53,16 @@ async function generateCodeString(node: SceneNode, depth = 0): Promise<string> {
     return "";
   }
 
-  // TODO: この関数内の処理をNodeTypeによって切り分ける
-
   // SVGの場合はSVG文字列を取得する
   if (svgExportNodeTypes.includes(type)) {
-    const svgString = await node.exportAsync({
-      format: "SVG_STRING",
-    });
+    // @see https://bugreports.qt.io/browse/QDS-4690
+    const svgString = await node
+      .exportAsync({
+        format: "SVG_STRING",
+      })
+      .catch(() => {
+        return "";
+      });
     return svgString;
   }
 
@@ -74,9 +79,8 @@ async function generateCodeString(node: SceneNode, depth = 0): Promise<string> {
   // CSSPropertiesを取得する
   const cssJson = await node.getCSSAsync();
   const hasFillImageObject = Object.entries(cssJson).find(
-    ([key, value]) => value.indexOf("<path-to-image>") !== -1,
+    ([, value]) => value.indexOf("<path-to-image>") !== -1,
   );
-  // TODO: 画像の場合は置換が必要かも
   const fillImages = await getFillImage(node);
   if (
     hasFillImageObject &&
@@ -84,12 +88,14 @@ async function generateCodeString(node: SceneNode, depth = 0): Promise<string> {
     0 < fillImages?.length &&
     fillImages[0].bytes
   ) {
-    const imgSrc = figma.base64Encode(fillImages[0].bytes);
-
-    cssJson[hasFillImageObject[0]] = hasFillImageObject[1].replace(
-      `<path-to-image>`,
-      `'data:image/png;base64,${imgSrc}'`,
-    );
+    // TODO: 画像の場合は置換が必要かも
+    // TODO: 重すぎるのでコメントアウト
+    // const imgSrc = figma.base64Encode(fillImages[0].bytes);
+    //
+    // cssJson[hasFillImageObject[0]] = hasFillImageObject[1].replace(
+    //   `<path-to-image>`,
+    //   `'data:image/png;base64,${imgSrc}'`,
+    // );
     cssJson["background-size"] = "cover";
   }
 
@@ -131,74 +137,6 @@ const cssJsonToStyleString = (cssJson: { [key: string]: string }): string => {
   );
   return styleString;
 };
-
-/**
- * Formats an HTML string with indentation.
- *
- * @param {string} htmlString - The HTML string to be formatted.
- * @param {object} options - An optional object containing formatting options.
- * @param {number} options.tabWidth - The number of spaces to be used for indentation. Default is 2.
- * @returns {string} - The formatted HTML string.
- */
-function formatHTML(
-  htmlString: string,
-  options: { tabWidth?: number } = {},
-): string {
-  const tabWidth = options.tabWidth || 2; // インデントのスペース数
-  const selfClosingTags = new Set([
-    "area",
-    "base",
-    "br",
-    "col",
-    "embed",
-    "hr",
-    "img",
-    "input",
-    "link",
-    "meta",
-    "source",
-    "track",
-    "wbr",
-  ]);
-
-  const lines = htmlString.split("\n");
-  let currentIndent = 0;
-  let formattedHTML = "";
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (line.length === 0) continue;
-
-    const isClosingTag = line.startsWith("</");
-    const isOpeningTag = !isClosingTag && line.startsWith("<");
-    const isSelfClosingTag = isOpeningTag && line.endsWith("/>");
-
-    if (isClosingTag) {
-      currentIndent--;
-    }
-
-    formattedHTML += " ".repeat(currentIndent * tabWidth) + line + "\n";
-
-    if (isOpeningTag) {
-      if (!isSelfClosingTag && !selfClosingTags.has(getTagName(line))) {
-        currentIndent++;
-      }
-    }
-  }
-
-  return formattedHTML.trim();
-}
-
-/**
- * Retrieves the tag name from the provided HTML tag.
- *
- * @param {string} tag - The HTML tag from which to extract the tag name.
- * @returns {string} - The extracted tag name.
- */
-function getTagName(tag: string): string {
-  const match = tag.match(/<\/?([^\s>]+)/);
-  return match ? match[1] : "";
-}
 
 /**
  * Generates an object containing the prop types for a component based on the given property definitions.

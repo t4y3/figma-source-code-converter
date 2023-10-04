@@ -1,11 +1,11 @@
 {
-  "name": "tchad",
-  "version": "1.0.0",
+  "name": "figma-source-code-converter",
+  "version": "0.0.0",
   "description": "Code for the web is displayed in dev mode.",
   "main": "index.js",
   "scripts": {
-    "dev": "tsc --project tsconfig.json -w",
-    "build": "tsc --project tsconfig.json"
+    "dev": "tsc && vite build src/code.ts -w -c vite.config.js --outDir ../../dist",
+    "build": "tsc && vite build"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +15,12 @@
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.76.0",
+    "@types/beautify": "^0.0.1",
     "prettier": "^3.0.3",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vite": "^4.4.5"
+  },
+  "dependencies": {
+    "beautify": "^0.0.8"
   }
 }

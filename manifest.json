@@ -2,7 +2,7 @@
   "name": "Code for copy",
   "id": "1283351322502686414",
   "api": "1.0.0",
-  "main": "src/code.js",
+  "main": "dist/code.umd.js",
   "editorType": ["dev"],
   "capabilities": ["codegen"],
   "codegenLanguages": [{ "label": "React", "value": "react" }]
