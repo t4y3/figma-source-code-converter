@@ -16,11 +16,14 @@
   "devDependencies": {
     "@figma/plugin-typings": "^1.76.0",
     "@types/beautify": "^0.0.1",
+    "@types/hast": "^3.0.1",
     "prettier": "^3.0.3",
     "typescript": "^5.2.2",
     "vite": "^4.4.5"
   },
   "dependencies": {
-    "beautify": "^0.0.8"
+    "beautify": "^0.0.8",
+    "hast-util-to-html": "^9.0.0",
+    "hastscript": "^8.0.0"
   }
 }
