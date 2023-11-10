@@ -4,8 +4,8 @@
   "description": "Code for the web is displayed in dev mode.",
   "main": "index.js",
   "scripts": {
-    "dev": "tsc && vite build src/code.ts -w -c vite.config.js --outDir ../../dist",
-    "build": "tsc && vite build"
+    "dev": " tsup src/code.ts --format iife --target es6 --watch",
+    "build": " tsup src/code.ts --format iife --target es6"
   },
   "keywords": [],
   "author": "",
@@ -15,15 +15,15 @@
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.76.0",
-    "@types/beautify": "^0.0.1",
     "@types/hast": "^3.0.1",
-    "prettier": "^3.0.3",
-    "typescript": "^5.2.2",
-    "vite": "^4.4.5"
+    "@types/svg-parser": "^2.0.6",
+    "tsup": "^7.2.0",
+    "typescript": "^5.2.2"
   },
   "dependencies": {
-    "beautify": "^0.0.8",
     "hast-util-to-html": "^9.0.0",
-    "hastscript": "^8.0.0"
+    "hastscript": "^8.0.0",
+    "prettier": "^3.0.3",
+    "svg-parser": "^2.0.4"
   }
 }

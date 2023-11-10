@@ -2,6 +2,7 @@ import { generatePropsTypeFromComponentPropertyDefinitions } from "./generatePro
 import { getFillImage } from "./getFillImage.ts";
 import { h } from "hastscript";
 import { Element, Text } from "hast";
+import { parse } from "svg-parser";
 
 // 生成するノードのタイプ
 const generateNodeTypes: Partial<SceneNode["type"]>[] = [
@@ -32,42 +33,44 @@ const svgExportNodeTypes: Partial<SceneNode["type"]>[] = [
 ];
 
 /**
- * Generates a string of code for a given SceneNode.
- *
- * @param {SceneNode} node - The SceneNode to generate the code for.
- * @param {number} [depth=0] - The depth of the node in the hierarchy.
- * @returns {Promise<string>} - The generated code string.
+ * Generates an Element or Text node based on the given SceneNode.
  */
 export async function generateElement(
   node: SceneNode,
   depth = 0,
-): Promise<Element | null> {
+): Promise<Element | Text | null> {
   const { type } = node;
 
   if (!generateNodeTypes.includes(type)) {
     return null;
   }
 
+  // TODO: コンポーネントセットは無視する
+  // 別で定義する必要がある
+  if (type === "COMPONENT_SET") {
+    return null;
+  }
+
   // SVGの場合はSVG文字列を取得する
   if (svgExportNodeTypes.includes(type)) {
-    return null;
-    // // @see https://bugreports.qt.io/browse/QDS-4690
-    // const svgString = await node
-    //   .exportAsync({
-    //     format: "SVG_STRING",
-    //   })
-    //   .catch(() => {
-    //     return "";
-    //   });
-    // return svgString;
+    // @see https://bugreports.qt.io/browse/QDS-4690
+    const svgString = await node
+      .exportAsync({
+        format: "SVG_STRING",
+      })
+      .catch(() => {
+        return "";
+      });
+
+    const parsed = parse(svgString);
+    return (parsed.children?.[0] as Element | Text) || null;
   }
 
   if ("componentPropertyDefinitions" in node) {
-    console.warn(
-      generatePropsTypeFromComponentPropertyDefinitions(
-        node.componentPropertyDefinitions,
-      ),
+    const data = generatePropsTypeFromComponentPropertyDefinitions(
+      node.componentPropertyDefinitions,
     );
+    console.warn(data);
   }
 
   const elementName = "div";
